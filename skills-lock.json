@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "skills": {
+    "accessibility-a11y": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "computedHash": "3117d5b0302f4fbb90cf7b3b65474aa0ea70eadaf91036ab9e20c912d68f9289"
+    },
+    "api-contract-testing": {
+      "source": "aj-geddes/useful-ai-prompts",
+      "sourceType": "github",
+      "computedHash": "8be0344d35cfbd832a16cd830054ae80a0ab7b7d2a3861403e5c19ffdd55f7f4"
+    },
+    "api-design-principles": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "74d1cdb3f538a1f2758001f65132e6fd634dd0d3c8fdff54e6439a97f72499d9"
+    },
+    "code-quality": {
+      "source": "tursodatabase/turso",
+      "sourceType": "github",
+      "computedHash": "25b68bfaa9c6f6efed9a36b6573f2453d0b0555aa84c8b4b9c74185f38fd0129"
+    },
+    "color-palette": {
+      "source": "jezweb/claude-skills",
+      "sourceType": "github",
+      "computedHash": "8f2df57d728683e7389e5867e1dee1a1155991f06645d1866eb11ca69cfc9fe0"
+    },
+    "design-system-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "1da4c9b595db349b7ddee3622eea0acdf0318048384137f0ef41bcfc76b27679"
+    },
+    "design-tokens": {
+      "source": "dylanfeltus/skills",
+      "sourceType": "github",
+      "computedHash": "a5d55ed75e8feff1c8f45fa99b0a57804e590e384c6874ff4aa45b99c587841e"
+    },
+    "error-handling-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "4930af6f5c144997c6d43a1cbbabc9776eb98cc0926cde29db6e92623dcf78a0"
+    },
+    "esbuild-bundler": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "computedHash": "c8a343af2f8efd291665dc0ceb48781cfd14bd9aaccfdfd2c76ee5273501d86f"
+    },
+    "figma": {
+      "source": "hoodini/ai-agents-skills",
+      "sourceType": "github",
+      "computedHash": "31776d07ec44f5e948f3f0bd14aa421a872a97883a2a90c3bfb391e0bfaf336b"
+    },
+    "figma-design": {
+      "source": "manutej/luxor-claude-marketplace",
+      "sourceType": "github",
+      "computedHash": "358e2aec8110745678729da9230faa479ecb95c3bcb599f15410a04645cd7cca"
+    },
+    "figma-plugin": {
+      "source": "srstomp/pokayokay",
+      "sourceType": "github",
+      "computedHash": "b9ebc43a76ec971399cdcb22dbe8169a10e5452f63fd93a47ff85ff2eaef0162"
+    },
+    "github-actions-expert": {
+      "source": "cin12211/orca-q",
+      "sourceType": "github",
+      "computedHash": "159f25916c9fad828073fc863381828c1d89624342861bf79c449d7cec50066e"
+    },
+    "github-actions-pipeline-creator": {
+      "source": "patricio0312rev/skills",
+      "sourceType": "github",
+      "computedHash": "8ed43f3d586cb61650582f99a8a1ac4e3ac92fec073c45786e53a678e8676688"
+    },
+    "interface-design": {
+      "source": "dammyjay93/interface-design",
+      "sourceType": "github",
+      "computedHash": "d004c5e5e2e7132e1d64e9c2a339db7f7aaa69053a5c19cddc210dd35dd6fff5"
+    },
+    "javascript-typescript-typescript-scaffold": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "472a4a1fd344604b9b5142e49aaaae4e43b7f0b2fa5ccc7fa142a5e89a214b31"
+    },
+    "lit-and-figma": {
+      "source": "rodydavis/skills",
+      "sourceType": "github",
+      "computedHash": "c52fa25b14e44dead5f67404aba57f2b10e305cb5c22d56ad743233c65948da6"
+    },
+    "mastering-typescript": {
+      "source": "spillwavesolutions/mastering-typescript-skill",
+      "sourceType": "github",
+      "computedHash": "1cba0ac27ae3ceb517b93bb6ccf053607b8ba939a1c1c9d4716eed7e4d9175b2"
+    },
+    "mcp-server-development": {
+      "source": "akiojin/llmlb",
+      "sourceType": "github",
+      "computedHash": "05ad674cd6cb7a17009edb6d40091f4ae1a0e9b93fae15a5c45e69d21cc18e27"
+    },
+    "nodejs-backend-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "4c6bf8fbd9a13d61e326ddeb210af5854fea3b253922a7981bd7718f3b765c08"
+    },
+    "nodejs-backend-typescript": {
+      "source": "bobmatnyc/claude-mpm-skills",
+      "sourceType": "github",
+      "computedHash": "6d0bededb88e9a6920a4e829f17ad17ecfd3e180cb054955a96571b5226595e4"
+    },
+    "npm-library-setup": {
+      "source": "huozhi/npm-skills",
+      "sourceType": "github",
+      "computedHash": "38f8a98c6c08aac786ccc5ec2f27f2ce1f8df2fe2a296c780e6c31e61414a5db"
+    },
+    "npm-publish": {
+      "source": "b-open-io/prompts",
+      "sourceType": "github",
+      "computedHash": "ddd238d0de910ab2abc129d83e4f46b6dbd223505c3d56668c5ff8e9017f2f45"
+    },
+    "quality-documentation-manager": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "a026b33dfae41f3dd4fccd5a110599c79e9864c7f9495e8a370a50206eedfac1"
+    },
+    "readme-generator": {
+      "source": "dmccreary/claude-skills",
+      "sourceType": "github",
+      "computedHash": "7edd8f265b7a56f532bc360d2ed3741389df652cbc436dc4db1f16a07ac6c990"
+    },
+    "technical-writer": {
+      "source": "onewave-ai/claude-skills",
+      "sourceType": "github",
+      "computedHash": "91f95ce88d7f311aa1eb1ca00e2dbfe629383c00a7bf076effb0e3af9e051b76"
+    },
+    "typescript-skills": {
+      "source": "llama-farm/llamafarm",
+      "sourceType": "github",
+      "computedHash": "5f0a9d04ab254e57e880443b65e2846b280f9a16a728c58d76f8f8a84d06e4b3"
+    },
+    "vitest-testing": {
+      "source": "existential-birds/beagle",
+      "sourceType": "github",
+      "computedHash": "8c634cb9b05cf11c40412978784ca246d78a35846ea0d2215e14ee589e3331d4"
+    },
+    "vitest-testing-patterns": {
+      "source": "erichowens/some_claude_skills",
+      "sourceType": "github",
+      "computedHash": "64cb197bfda0892b45f087c2c1a75557abe209c2cbd47de6f231106a184ed5f5"
+    },
+    "websocket-engineer": {
+      "source": "jeffallan/claude-skills",
+      "sourceType": "github",
+      "computedHash": "77a4e6e663b3a3075bb9194ce0266970a1d0dc11d08fa55ffc0fdf23e3402949"
+    },
+    "websocket-realtime-builder": {
+      "source": "patricio0312rev/skills",
+      "sourceType": "github",
+      "computedHash": "b86b5af780712fe94d063208ad9f5bc95589458813b14365eb1786e01ef0728a"
+    }
+  }
+}

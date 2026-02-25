@@ -1,0 +1,25 @@
+node_modules/
+dist/
+*.js.map
+.DS_Store
+*.tsbuildinfo
+
+# Plugin build output
+plugin/code.js
+plugin/code.js.map
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+
+# Env
+.env
+.env.local
+
+# npm
+*.tgz
