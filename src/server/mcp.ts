@@ -1,16 +1,18 @@
 // src/server/mcp.ts
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import { WebSocketManager } from "./websocket.js";
 import { CommandQueue } from "./command-queue.js";
 import { Router } from "./router.js";
 import { createStatusTool, ToolDef } from "./tools/status.js";
-import {
-  SERVER_VERSION,
-} from "../../shared/protocol.js";
+import { SERVER_VERSION } from "../../shared/protocol.js";
 
 export class FigmaMcpServer {
-  private mcpServer: McpServer;
+  private server: Server;
   private wsManager: WebSocketManager;
   private queue: CommandQueue;
   private router: Router;
@@ -21,17 +23,20 @@ export class FigmaMcpServer {
     this.queue = new CommandQueue();
     this.router = new Router(this.queue);
 
-    this.mcpServer = new McpServer({
-      name: "figma-mcp-write",
-      version: SERVER_VERSION,
-    });
+    this.server = new Server(
+      { name: "figma-mcp-write", version: SERVER_VERSION },
+      { capabilities: { tools: {} } }
+    );
 
     // Wire up: when queue wants to send a command, send it over WebSocket
     this.queue.onCommand((command) => {
       try {
         this.wsManager.sendCommand(command);
       } catch {
-        this.queue.reject(command.id, "No Figma plugin connected. Open Figma and run the figma-mcp-write plugin.");
+        this.queue.reject(
+          command.id,
+          "No Figma plugin connected. Open Figma and run the figma-mcp-write plugin."
+        );
       }
     });
 
@@ -49,57 +54,85 @@ export class FigmaMcpServer {
       }, 5000);
     });
 
-    this.registerTools();
+    this.buildToolList();
+    this.registerHandlers();
   }
 
-  private registerTools(): void {
+  private buildToolList(): void {
     // Status tool
-    const statusTool = createStatusTool(this.wsManager, this.router);
-    this.registerTool(statusTool);
+    this.tools.push(createStatusTool(this.wsManager, this.router));
 
-    // Meta-tool (figma)
-    this.registerMetaTool();
+    // Meta-tool
+    this.tools.push(this.buildMetaTool());
 
     // Category tools (11)
-    this.registerCategoryTools();
+    for (const cat of this.buildCategoryTools()) {
+      this.tools.push(cat);
+    }
   }
 
-  private registerTool(tool: ToolDef): void {
-    this.tools.push(tool);
-    this.mcpServer.tool(
-      tool.name,
-      tool.description,
-      tool.inputSchema,
-      async (params) => {
-        try {
-          const result = await tool.handler(params as Record<string, unknown>);
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: JSON.stringify(result, null, 2),
-              },
-            ],
-          };
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : String(error);
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: JSON.stringify({ error: message }, null, 2),
-              },
-            ],
-            isError: true,
-          };
-        }
+  private registerHandlers(): void {
+    // List all tools
+    this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
+      tools: this.tools.map((t) => ({
+        name: t.name,
+        description: t.description,
+        inputSchema: t.inputSchema,
+      })),
+    }));
+
+    // Call a tool by name
+    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const tool = this.tools.find((t) => t.name === request.params.name);
+
+      if (!tool) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                { error: `Unknown tool: ${request.params.name}` },
+                null,
+                2
+              ),
+            },
+          ],
+          isError: true,
+        };
       }
-    );
+
+      try {
+        const params = (request.params.arguments ?? {}) as Record<
+          string,
+          unknown
+        >;
+        const result = await tool.handler(params);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : String(error);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify({ error: message }, null, 2),
+            },
+          ],
+          isError: true,
+        };
+      }
+    });
   }
 
-  private registerMetaTool(): void {
-    this.registerTool({
+  private buildMetaTool(): ToolDef {
+    return {
       name: "figma",
       description:
         "Primary Figma tool. Send structured commands or batches of commands to manipulate Figma files. " +
@@ -142,16 +175,10 @@ export class FigmaMcpServer {
           commands?: { command: string; params: Record<string, unknown> }[];
         };
 
-        // Single command mode
         if (command && params) {
-          const response = await this.router.routeStructuredCommand(
-            command,
-            params
-          );
-          return response;
+          return await this.router.routeStructuredCommand(command, params);
         }
 
-        // Batch mode
         if (commands && commands.length > 0) {
           return await this.router.routeBatch(commands);
         }
@@ -161,15 +188,11 @@ export class FigmaMcpServer {
             "Provide either 'command' + 'params' for a single operation, or 'commands' array for compound operations.",
         };
       },
-    });
+    };
   }
 
-  private registerCategoryTools(): void {
-    const categories: {
-      name: string;
-      tool: string;
-      description: string;
-    }[] = [
+  private buildCategoryTools(): ToolDef[] {
+    const categories: { name: string; tool: string; description: string }[] = [
       {
         name: "layers",
         tool: "figma_layers",
@@ -251,43 +274,36 @@ export class FigmaMcpServer {
       },
     ];
 
-    for (const cat of categories) {
-      this.registerTool({
-        name: cat.tool,
-        description: cat.description,
-        inputSchema: {
-          type: "object",
-          properties: {
-            command: {
-              type: "string",
-              description: `The command to execute. Must be one of the commands listed in this tool's description.`,
-            },
-            params: {
-              type: "object",
-              description: "Parameters for the command.",
-            },
+    return categories.map((cat) => ({
+      name: cat.tool,
+      description: cat.description,
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          command: {
+            type: "string",
+            description: `The command to execute. Must be one of the commands listed in this tool's description.`,
           },
-          required: ["command", "params"],
+          params: {
+            type: "object",
+            description: "Parameters for the command.",
+          },
         },
-        handler: async (args) => {
-          const { command, params } = args as {
-            command: string;
-            params: Record<string, unknown>;
-          };
-
-          return await this.router.routeCategoryCommand(
-            cat.name,
-            command,
-            params
-          );
-        },
-      });
-    }
+        required: ["command", "params"],
+      },
+      handler: async (args: Record<string, unknown>) => {
+        const { command, params } = args as {
+          command: string;
+          params: Record<string, unknown>;
+        };
+        return await this.router.routeCategoryCommand(cat.name, command, params);
+      },
+    }));
   }
 
   async start(): Promise<void> {
     const transport = new StdioServerTransport();
-    await this.mcpServer.connect(transport);
+    await this.server.connect(transport);
   }
 
   getToolCount(): number {

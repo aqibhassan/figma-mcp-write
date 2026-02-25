@@ -49,7 +49,7 @@ export class WebSocketManager {
     return new Promise((resolve, reject) => {
       this.wss = new WebSocketServer({ port }, () => {
         const addr = this.wss!.address();
-        this._port = typeof addr === "object" ? addr.port : port;
+        this._port = addr !== null && typeof addr === "object" ? addr.port : port;
         resolve();
       });
 
