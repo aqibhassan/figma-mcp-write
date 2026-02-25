@@ -8,7 +8,7 @@ An open-source MCP server + Figma plugin that gives Claude Code full read/write 
 ### Implementation Progress
 | Phase | Name | Tools | Status |
 |-------|------|-------|--------|
-| 1 | Foundation + Router | 0 (architecture) | NOT STARTED |
+| 1 | Foundation + Router | 0 (architecture) | COMPLETE ✅ |
 | 2 | Read + Basic Write | 18 tools | NOT STARTED |
 | 3 | Styling + Layout | 13 tools | NOT STARTED |
 | 4 | Components + Structure | 13 tools | NOT STARTED |
