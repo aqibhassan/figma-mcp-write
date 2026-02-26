@@ -1,0 +1,17 @@
+# .dockerignore
+node_modules
+dist
+coverage
+.git
+.github
+docs
+test
+scripts
+*.md
+!README.md
+.DS_Store
+*.log
+.env
+.env.*
+release-artifacts
+figma-plugin.zip

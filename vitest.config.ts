@@ -10,6 +10,11 @@ export default defineConfig({
       "plugin/**/__tests__/**/*.test.ts",
       "test/**/*.test.ts",
     ],
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "test/e2e/**",
+    ],
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts", "plugin/**/*.ts", "shared/**/*.ts"],
