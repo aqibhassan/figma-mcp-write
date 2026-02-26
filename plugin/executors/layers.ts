@@ -470,39 +470,32 @@ registerExecutor("reorder_node", async (params) => {
     };
   }
 
-  const siblings = (parentNode as ChildrenMixin & BaseNode).children as SceneNode[];
-  const currentIndex = siblings.indexOf(node as unknown as SceneNode);
-
-  if (currentIndex === -1) {
-    return {
-      success: false,
-      error: "Node not found in parent's children list.",
-    };
-  }
-
-  // Remove from current position
-  siblings.splice(currentIndex, 1);
+  type ContainerNode = BaseNode & ChildrenMixin & {
+    insertChild(index: number, child: SceneNode): void;
+  };
+  const container = parentNode as unknown as ContainerNode;
+  const siblingCount = container.children.length;
 
   let targetIndex: number;
 
   if (position === "front") {
-    targetIndex = siblings.length; // Last = visually on top
-    siblings.push(node as unknown as SceneNode);
+    // Last index = visually on top
+    targetIndex = Math.max(0, siblingCount - 1);
   } else if (position === "back") {
-    targetIndex = 0; // First = visually on bottom
-    siblings.unshift(node as unknown as SceneNode);
+    // Index 0 = visually on bottom
+    targetIndex = 0;
   } else if (typeof position === "number") {
-    targetIndex = Math.max(0, Math.min(position, siblings.length));
-    siblings.splice(targetIndex, 0, node as unknown as SceneNode);
+    targetIndex = Math.max(0, Math.min(position as number, siblingCount - 1));
   } else {
-    // Put it back where it was
-    siblings.splice(currentIndex, 0, node as unknown as SceneNode);
     return {
       success: false,
       error:
         "Parameter 'position' must be 'front', 'back', or a number.",
     };
   }
+
+  // insertChild handles removal from current position automatically
+  container.insertChild(targetIndex, node! as unknown as SceneNode);
 
   return {
     success: true,

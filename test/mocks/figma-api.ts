@@ -123,11 +123,21 @@ export class MockNode {
   }
 
   appendChild(child: MockNode): void {
+    // Remove from current parent first (matches real Figma behavior)
+    if (child.parent) {
+      const idx = child.parent.children.indexOf(child);
+      if (idx !== -1) child.parent.children.splice(idx, 1);
+    }
     child.parent = this;
     this.children.push(child);
   }
 
   insertChild(index: number, child: MockNode): void {
+    // Remove from current parent first (matches real Figma behavior)
+    if (child.parent) {
+      const idx = child.parent.children.indexOf(child);
+      if (idx !== -1) child.parent.children.splice(idx, 1);
+    }
     child.parent = this;
     this.children.splice(index, 0, child);
   }
