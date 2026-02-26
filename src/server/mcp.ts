@@ -8,18 +8,21 @@ import {
 import { WebSocketManager } from "./websocket.js";
 import { CommandQueue } from "./command-queue.js";
 import { Router } from "./router.js";
+import { DesignSystemManager } from "./design-system.js";
 import { createStatusTool, ToolDef } from "./tools/status.js";
-import { SERVER_VERSION } from "../../shared/protocol.js";
+import { SERVER_VERSION, DesignSystemContext } from "../../shared/protocol.js";
 
 export class FigmaMcpServer {
   private server: Server;
   private wsManager: WebSocketManager;
   private queue: CommandQueue;
   private router: Router;
+  private dsManager: DesignSystemManager | null;
   private tools: ToolDef[] = [];
 
-  constructor(wsManager: WebSocketManager) {
+  constructor(wsManager: WebSocketManager, dsManager?: DesignSystemManager) {
     this.wsManager = wsManager;
+    this.dsManager = dsManager ?? null;
     this.queue = new CommandQueue();
     this.router = new Router(this.queue);
 
@@ -41,7 +44,12 @@ export class FigmaMcpServer {
     });
 
     // Wire up: when WebSocket receives a response, resolve it in the queue
+    // Special case: design_system_scan responses update the DS context manager
     this.wsManager.onResponse((response) => {
+      if (response.id === "design_system_scan" && response.success) {
+        this.dsManager?.setContext(response.data as DesignSystemContext);
+        return;
+      }
       this.queue.resolveWithResponse(response);
     });
 
