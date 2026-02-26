@@ -183,7 +183,7 @@ function handleMessage(message: WebSocketMessage): void {
       break;
 
     case "scan_design_system":
-      handleDesignSystemScan();
+      void handleDesignSystemScan();
       break;
   }
 }
@@ -240,6 +240,7 @@ async function handleCommand(command: Command): Promise<void> {
 // ============================================================
 
 import { getExecutor } from "./executors/index.js";
+import { scanDesignSystem } from "./utils/design-system-scanner.js";
 
 // ============================================================
 // Command Execution
@@ -284,23 +285,26 @@ function sendResponse(response: CommandResponse): void {
 }
 
 // ============================================================
-// Design System Scanner (stub for Phase 5)
+// Design System Scanner
 // ============================================================
 
-function handleDesignSystemScan(): void {
-  // Stub — will be implemented in Phase 5
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(
-      JSON.stringify({
-        type: "design_system_result",
-        payload: {
-          variables: { collections: [], colorTokens: [], spacingTokens: [], typographyTokens: [] },
-          styles: { textStyles: [], colorStyles: [], effectStyles: [], gridStyles: [] },
-          components: { local: [], external: [] },
-          conventions: { namingPattern: "unknown", spacingScale: [], colorPalette: [] },
-        },
-      })
-    );
+async function handleDesignSystemScan(): Promise<void> {
+  try {
+    const context = await scanDesignSystem();
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: "design_system_result",
+          payload: context,
+        })
+      );
+    }
+    sendToUI({ type: "statusUpdate", message: "Design system scanned successfully" });
+  } catch (err) {
+    sendToUI({
+      type: "statusUpdate",
+      message: `Design system scan failed: ${err instanceof Error ? err.message : String(err)}`,
+    });
   }
 }
 
