@@ -1,48 +1,47 @@
-<!-- CLAUDE.md -->
 # figma-mcp-write
 
 ## What This Is
 An open-source MCP server + Figma plugin that gives Claude Code full read/write control over Figma files. 68 tools (50 core + 18 AI-only superpowers) exposed through a **smart router architecture** of just 13 MCP tools. Design system intelligence, compound operations, best-in-class open-source DX.
 
-## Status: v0.2.0 Released
+## Status: ALL PHASES COMPLETE ✅
 
 ### Implementation Progress
 | Phase | Name | Tools | Status |
 |-------|------|-------|--------|
-| 1 | Foundation + Router | 0 (architecture) | COMPLETE |
-| 2 | Read + Basic Write | 18 tools | COMPLETE |
-| 3 | Styling + Layout | 13 tools | COMPLETE |
-| 4 | Components + Structure | 13 tools | COMPLETE |
-| 5 | Export + Variables + Design System | 8 tools + context | COMPLETE |
-| 6 | Superpowers | 18 tools | COMPLETE |
-| 7 | Polish + Open Source Launch | DX only | COMPLETE |
+| 1 | Foundation + Router | 0 (architecture) | COMPLETE ✅ |
+| 2 | Read + Basic Write | 18 tools | COMPLETE ✅ |
+| 3 | Styling + Layout | 13 tools | COMPLETE ✅ |
+| 4 | Components + Structure | 13 tools | COMPLETE ✅ |
+| 5 | Export + Variables + Design System | 8 tools + context | COMPLETE ✅ |
+| 6 | Superpowers | 18 tools | COMPLETE ✅ |
+| 7 | Polish + Open Source Launch | DX only | COMPLETE ✅ |
 
-### Key Docs
+### Key Planning Docs (ALL COMPLETE)
 - `docs/plans/2026-02-25-figma-mcp-v2-design.md` — Full design doc (approved)
 - `docs/plans/2026-02-25-v2-implementation-plan.md` — Master implementation plan
-- `docs/plans/phase-1-foundation.md` through `phase-7-polish.md` — Phase plans
+- `docs/plans/phase-1-foundation.md` — Phase 1: Foundation + Router (2,874 lines)
+- `docs/plans/phase-2-read-write.md` — Phase 2: Read + Basic Write, 18 tools (3,783 lines)
+- `docs/plans/phase-3-styling-layout.md` — Phase 3: Styling + Layout, 13 tools (3,372 lines)
+- `docs/plans/phase-4-components-structure.md` — Phase 4: Components + Structure, 13 tools (3,468 lines)
+- `docs/plans/phase-5-export-variables.md` — Phase 5: Export + Variables + Design System, 8 tools + context (4,834 lines)
+- `docs/plans/phase-6-superpowers.md` — Phase 6: Superpowers, 18 tools (6,420 lines)
+- `docs/plans/phase-7-polish.md` — Phase 7: Polish + Open Source Launch (2,397 lines)
 
 ## Architecture (v2 — Smart Router)
 
 ```
 Claude Code (stdio)
-    |
-    v
+    ↓
 MCP Server (13 tools: 1 meta + 11 category + 1 status)
-    |
-    v
+    ↓
 Smart Router (pattern matching + dispatch)
-    |
-    v
+    ↓
 Executor Layer (68 executors)
-    |
-    v
+    ↓
 WebSocket (ws://localhost:3846)
-    |
-    v
+    ↓
 Figma Plugin (desktop + browser)
-    |
-    v
+    ↓
 Figma Plugin API (full access)
 ```
 
@@ -60,7 +59,7 @@ Figma Plugin API (full access)
 | 9 | `figma_export` | export_node, set_export_settings, set_image_fill, get_node_css |
 | 10 | `figma_variables` | create/set_variable, create_collection, bind_variable |
 | 11 | `figma_reading` | get_node/selection/page_nodes, search_nodes, scroll_to_node |
-| 12 | `figma_superpowers` | 18 AI-only tools (see design doc for full list) |
+| 12 | `figma_superpowers` | 18 AI-only tools (see below) |
 | 13 | `figma_status` | Connection status, file info, available commands |
 
 ## Tech Stack
@@ -97,7 +96,7 @@ shared/
 
 test/
   integration/      — End-to-end integration tests
-  e2e/              — E2E tests with mock plugin client
+  e2e/              — Real Figma E2E tests
   fixtures/         — Sample node structures as JSON
   mocks/            — Mock Figma API + WebSocket
 
@@ -105,29 +104,44 @@ docs/plans/         — Design docs and implementation plans
 scripts/            — Build scripts and tool generators
 ```
 
-## Key Pattern: Tool -> Router -> Executor
-Every MCP tool call goes through the smart router which dispatches to the correct executor in the plugin. The router handles:
-- Command dispatch (single command)
-- Compound operations (batch with variable references $0, $1)
-- Design system context injection
+## Tool Categories (68 total)
+| Category | Count | Tools |
+|----------|-------|-------|
+| Layer management | 8 | create_node, create_text, delete/duplicate/move/resize/rename/reorder_node |
+| Text | 5 | set_text_content/style/color/alignment, find_replace_text |
+| Styling | 8 | set_fill/stroke/corner_radius/opacity/effects/blend_mode/constraints, apply_style |
+| Layout | 5 | set_auto_layout, add_to_auto_layout, set_layout_grid, group/ungroup_nodes |
+| Components | 6 | create_component/component_set/instance, swap/override/detach_instance |
+| Pages | 4 | create_page, switch_page, create_section, set_page_background |
+| Vectors | 3 | boolean_operation, flatten_node, set_mask |
+| Export | 4 | export_node, set_export_settings, set_image_fill, get_node_css |
+| Variables | 4 | create/set_variable, create_variable_collection, bind_variable |
+| Reading | 5 | get_node/selection/page_nodes, search_nodes, scroll_to_node |
+| **Superpowers** | **18** | bulk_rename/style/resize, smart_align, design_lint, accessibility_check, design_system_scan, responsive_check, color_palette_extract, typography/spacing_audit, component_coverage, export/import_tokens, localize_text, annotation_generate, generate_layout, duplicate_detector |
 
-## Communication Flow
-1. Claude calls MCP tool (e.g. `figma_layers` with command `rename_node`)
-2. Router resolves command to executor, wraps as Command with UUID
-3. Command sent over WebSocket to plugin
-4. Plugin executor runs against Figma Plugin API
-5. Plugin sends CommandResponse back over WebSocket
-6. Server resolves promise, returns to Claude
+## Key Differentiators (vs competitors)
+1. **Smart Router** — 13 MCP tools instead of 68 (80% less token overhead)
+2. **Compound Operations** — create full UI components in one call
+3. **Design System Intelligence** — auto-scans file, suggests tokens, warns on violations
+4. **18 AI-Only Superpowers** — no competitor has these as MCP tools
+5. **No API Token Required** — runs inside user's Figma session
+
+## Communication Protocol
+- Command/Response with UUID pairing
+- Batch support for compound operations
+- Variable references ($0, $1, $0.property) for chaining
+- Push events (selection_changed, page_changed, etc.)
+- Design system context injection
 
 ## Timeouts
 - Default: 30s per command
 - Bulk/export/superpowers: 120s
 - Design system scan: 60s
 - Plugin reconnect: 2s interval
-- Disconnect buffer: 5s (commands queue, then reject)
+- Disconnect buffer: 5s
 
 ## Coding Conventions
-- Strict TypeScript, no `any` (use `unknown` for untyped params)
+- Strict TypeScript, no `any` (use `unknown`)
 - All colors accept hex strings (`#FF0000`) — parsing in plugin
 - Node IDs: strings in Figma format (`1234:5678`)
 - Error messages: clear enough for Claude to self-correct
@@ -135,76 +149,16 @@ Every MCP tool call goes through the smart router which dispatches to the correc
 - Max 3 production dependencies
 
 ## Testing (4 layers)
-1. **Unit tests** — tool param validation + executor behavior (mocked Figma API)
-2. **Integration tests** — mock WebSocket end-to-end
-3. **E2E tests** — mock plugin client against real server (`npm run test:e2e`)
-4. **Manual testing** — each tool against real Figma file
-
-## Build
-- Server: `tsc` -> `dist/`
-- Plugin: `esbuild` bundle -> single `code.js` for Figma
-- Docker: `docker build -t figma-mcp-write .`
-- Separate tsconfigs (server targets Node, plugin targets browser)
-
-## Scripts
-```bash
-npm run dev          # Dev mode (auto-restart)
-npm run build        # Build server + plugin
-npm test             # Run all tests
-npm run test:e2e     # Run E2E tests only
-npm run typecheck    # Type check server + plugin
-npm run lint         # ESLint
-npm run create-tool  # Generate tool scaffold
-```
+1. Unit tests: tool param validation + executor behavior
+2. Integration tests: mock WebSocket end-to-end
+3. Manual testing: each tool against real Figma file
+4. E2E tests: automated tests against real running Figma
 
 ## Hard Rules
 - Never push to remote without explicit user approval
 - Plugin must work in both Figma desktop and browser
 - Every tool description must be self-documenting for Claude
 - No API tokens required
-- No `child_process.exec` ever (enforced via ESLint)
+- No `child_process.exec` ever
 - Input sanitization on every tool (node IDs, colors, etc.)
 - Keep production dependencies under 5
-
-## Troubleshooting
-
-### Plugin won't connect
-1. Verify the MCP server is running: `npm run dev`
-2. Check the port is free: `lsof -i :3846`
-3. In Figma, check Plugins > Development > Open Console for errors
-4. Try restarting the plugin from the Plugins menu
-
-### Command times out
-1. Default timeout is 30s, bulk ops get 120s
-2. Check the Figma plugin console for errors
-3. The plugin may be unresponsive — restart it
-4. For bulk operations on large files (10K+ nodes), timeouts are expected on very slow machines
-
-### TypeScript errors after pulling
-1. Run `npm install` to update dependencies
-2. Run `npm run build` to regenerate dist/
-3. Check that your Node.js version is >= 18
-
-### Tests fail
-1. Run `npm run typecheck` first to catch type errors
-2. Run tests with verbose output: `npm test -- --reporter=verbose`
-3. For E2E tests, ensure no other process is using port 13846
-
-## How to Extend
-
-### Adding a new tool
-```bash
-npx tsx scripts/create-tool.ts my_tool_name category_name
-```
-This creates the executor stub and test stub. See CONTRIBUTING.md for the full guide.
-
-### Adding a new superpower
-Same as above, but use `superpowers` as the category. Superpowers should return rich structured reports (not just success/fail) and use `BULK_TIMEOUT` for operations touching many nodes.
-
-### Adding a new MCP tool (category)
-This is rare — we have 13 MCP tools covering all categories. If you need a new category:
-1. Create tool definition in `src/server/tools/<name>.ts`
-2. Register in `src/server/mcp.ts`
-3. Create executor file in `plugin/executors/<name>.ts`
-4. Update the router in `src/server/router.ts`
-5. Update CLAUDE.md, README.md, and the design doc
