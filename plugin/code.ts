@@ -200,7 +200,7 @@ async function handleCommand(command: Command): Promise<void> {
           // Rollback: undo all previous successful operations
           for (let i = 0; i < batchResults.length - 1; i++) {
             if (batchResults[i].success) {
-              figma.undo();
+              (figma as unknown as { undo(): void }).undo();
             }
           }
           break;
@@ -235,16 +235,46 @@ async function handleCommand(command: Command): Promise<void> {
   }
 }
 
-async function executeCommand(command: Command): Promise<CommandResponse> {
-  // This will be filled in by executor imports in Phase 2+
-  // For now, return a "not implemented" response
-  sendToUI({ type: "commandExecuted", command: command.type });
+// ============================================================
+// Executor Registry
+// ============================================================
 
-  return {
-    id: command.id,
-    success: false,
-    error: `Command '${command.type}' is not yet implemented. Available in a future phase.`,
-  };
+import { getExecutor } from "./executors/index.js";
+
+// ============================================================
+// Command Execution
+// ============================================================
+
+async function executeCommand(command: Command): Promise<CommandResponse> {
+  const executor = getExecutor(command.type);
+
+  if (!executor) {
+    sendToUI({ type: "commandError", command: command.type, error: "Not implemented" });
+    return {
+      id: command.id,
+      success: false,
+      error: `Command '${command.type}' is not yet implemented. It will be available in a future phase.`,
+    };
+  }
+
+  try {
+    const result = await executor(command.params);
+    sendToUI({ type: "commandExecuted", command: command.type });
+    return {
+      id: command.id,
+      success: result.success,
+      data: result.data,
+      error: result.error,
+    };
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    sendToUI({ type: "commandError", command: command.type, error: errorMessage });
+    return {
+      id: command.id,
+      success: false,
+      error: errorMessage,
+    };
+  }
 }
 
 function sendResponse(response: CommandResponse): void {
