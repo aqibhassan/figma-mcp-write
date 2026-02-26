@@ -29,9 +29,9 @@
   ],
   "type": "module",
   "bin": {
-    "figma-mcp-write": "./dist/server/index.js"
+    "figma-mcp-write": "./dist/src/server/index.js"
   },
-  "main": "./dist/server/index.js",
+  "main": "./dist/src/server/index.js",
   "files": [
     "dist/",
     "plugin/manifest.json",
@@ -45,7 +45,7 @@
     "build": "npm run build:server && npm run build:plugin",
     "build:server": "tsc -p tsconfig.json",
     "build:plugin": "node scripts/build-plugin.js",
-    "start": "node dist/server/index.js",
+    "start": "node dist/src/server/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "vitest run test/e2e/",

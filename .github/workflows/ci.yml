@@ -81,7 +81,7 @@ jobs:
 
       - name: Verify dist output
         run: |
-          test -f dist/server/index.js
+          test -f dist/src/server/index.js
           echo "Server build OK"
 
       - name: Verify plugin output
