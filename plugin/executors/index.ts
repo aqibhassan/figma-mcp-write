@@ -12,3 +12,6 @@ import "./layers.js";
 import "./text.js";
 import "./styling.js";
 import "./layout.js";
+import "./components.js";
+import "./pages.js";
+import "./vectors.js";
