@@ -421,6 +421,66 @@ describe("Component Executors", () => {
       expect(result.success).toBe(true);
     });
 
+    it("overrides fill of an instance child", async () => {
+      const comp = createMockComponent("Card");
+      const rect = createMockRectangle("Background");
+      comp.appendChild(rect as unknown as MockSceneNode);
+      const instance = createMockInstance("Card Instance", comp);
+      const instanceRect = createMockRectangle("Background");
+      instanceRect.fills = [];
+      instance.appendChild(instanceRect as unknown as MockSceneNode);
+      mockFigma.currentPage.appendChild(comp as unknown as MockSceneNode);
+      mockFigma.currentPage.appendChild(instance as unknown as MockSceneNode);
+
+      const result = await setInstanceOverride({
+        instanceId: instance.id,
+        overrides: [
+          { property: "fill", nodeId: instanceRect.id, value: "#FF0000" },
+        ],
+      });
+
+      expect(result.success).toBe(true);
+    });
+
+    it("overrides fill with alpha channel (8-digit hex)", async () => {
+      const comp = createMockComponent("Card");
+      const rect = createMockRectangle("Tint");
+      comp.appendChild(rect as unknown as MockSceneNode);
+      const instance = createMockInstance("Card Instance", comp);
+      const instanceRect = createMockRectangle("Tint");
+      instanceRect.fills = [];
+      instance.appendChild(instanceRect as unknown as MockSceneNode);
+      mockFigma.currentPage.appendChild(comp as unknown as MockSceneNode);
+      mockFigma.currentPage.appendChild(instance as unknown as MockSceneNode);
+
+      const result = await setInstanceOverride({
+        instanceId: instance.id,
+        overrides: [
+          { property: "fill", nodeId: instanceRect.id, value: "#FF000080" },
+        ],
+      });
+
+      expect(result.success).toBe(true);
+    });
+
+    it("fails if fill color is invalid", async () => {
+      const comp = createMockComponent("Card");
+      const instance = createMockInstance("Card Instance", comp);
+      instance.fills = [];
+      mockFigma.currentPage.appendChild(comp as unknown as MockSceneNode);
+      mockFigma.currentPage.appendChild(instance as unknown as MockSceneNode);
+
+      const result = await setInstanceOverride({
+        instanceId: instance.id,
+        overrides: [
+          { property: "fill", value: "not-a-color" },
+        ],
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("Invalid hex color");
+    });
+
     it("fails if instanceId is missing", async () => {
       const result = await setInstanceOverride({
         overrides: [{ property: "text", value: "Hi" }],

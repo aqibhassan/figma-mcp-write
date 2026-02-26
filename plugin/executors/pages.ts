@@ -1,8 +1,8 @@
 // plugin/executors/pages.ts
 import { registerExecutor } from "./registry.js";
+import { hexToRgb } from "../utils/color.js";
 
-interface CommandResponse {
-  id?: string;
+interface CommandResult {
   success: boolean;
   data?: unknown;
   error?: string;
@@ -12,25 +12,16 @@ interface CommandResponse {
 // Helpers
 // ============================================================
 
-function errorResponse(error: string): CommandResponse {
+function errorResponse(error: string): CommandResult {
   return { success: false, error };
 }
 
-function successResponse(data: unknown): CommandResponse {
+function successResponse(data: unknown): CommandResult {
   return { success: true, data };
 }
 
 function isValidHexColor(color: string): boolean {
   return /^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(color);
-}
-
-function parseHexColor(hex: string): { r: number; g: number; b: number } {
-  const h = hex.replace("#", "");
-  return {
-    r: parseInt(h.substring(0, 2), 16) / 255,
-    g: parseInt(h.substring(2, 4), 16) / 255,
-    b: parseInt(h.substring(4, 6), 16) / 255,
-  };
 }
 
 // ============================================================
@@ -39,7 +30,7 @@ function parseHexColor(hex: string): { r: number; g: number; b: number } {
 
 export async function createPage(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const name = params.name as string | undefined;
 
   if (!name || typeof name !== "string" || name.trim() === "") {
@@ -64,7 +55,7 @@ export async function createPage(
 
 export async function switchPage(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const pageId = params.pageId as string | undefined;
   const pageName = params.pageName as string | undefined;
 
@@ -115,7 +106,7 @@ export async function switchPage(
 
 export async function createSection(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const name = params.name as string | undefined;
   const x = params.x as number | undefined;
   const y = params.y as number | undefined;
@@ -161,7 +152,7 @@ export async function createSection(
 
 export async function setPageBackground(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const pageId = params.pageId as string | undefined;
   const color = params.color as string | undefined;
 
@@ -195,12 +186,13 @@ export async function setPageBackground(
     page = figma.currentPage;
   }
 
-  const rgb = parseHexColor(color);
+  const { r, g, b, a } = hexToRgb(color);
 
   page.backgrounds = [
     {
       type: "SOLID",
-      color: rgb,
+      color: { r, g, b },
+      opacity: a,
       visible: true,
     } as Paint,
   ];

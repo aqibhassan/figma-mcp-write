@@ -1,8 +1,8 @@
 // plugin/executors/components.ts
 import { registerExecutor } from "./registry.js";
+import { hexToSolidPaint } from "../utils/color.js";
 
-interface CommandResponse {
-  id?: string;
+interface CommandResult {
   success: boolean;
   data?: unknown;
   error?: string;
@@ -16,11 +16,11 @@ function getNode(nodeId: string): SceneNode | null {
   return figma.getNodeById(nodeId) as SceneNode | null;
 }
 
-function errorResponse(error: string): CommandResponse {
+function errorResponse(error: string): CommandResult {
   return { success: false, error };
 }
 
-function successResponse(data: unknown): CommandResponse {
+function successResponse(data: unknown): CommandResult {
   return { success: true, data };
 }
 
@@ -45,7 +45,7 @@ function serializeNode(
 
 export async function createComponent(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const nodeId = params.nodeId as string | undefined;
 
   if (!nodeId) {
@@ -69,6 +69,14 @@ export async function createComponent(
     return errorResponse(
       `Node '${nodeId}' is a ${node.type}, but must be a FRAME or GROUP to convert to a component. ` +
         `Only frames and groups can be converted to components.`
+    );
+  }
+
+  // Validate parent before creating anything (avoids dangling nodes)
+  const parent = node.parent;
+  if (!parent || !("children" in parent)) {
+    return errorResponse(
+      `Node '${nodeId}' has no parent container. The node must be inside a page, frame, or group to be converted to a component.`
     );
   }
 
@@ -103,19 +111,19 @@ export async function createComponent(
     }
     component.fills = frame.fills as Paint[];
     component.strokes = frame.strokes as Paint[];
-    component.cornerRadius = frame.cornerRadius;
+    // Guard against figma.mixed (per-corner radii) — only copy if uniform
+    if (frame.cornerRadius !== figma.mixed) {
+      component.cornerRadius = frame.cornerRadius as number;
+    }
     component.clipsContent = frame.clipsContent;
   }
 
-  // Insert component at the same position in parent
-  const parent = node.parent;
-  if (parent && "children" in parent) {
-    const index = (parent as ChildrenMixin).children.indexOf(node);
-    if (index !== -1) {
-      (parent as ChildrenMixin).insertChild(index, component);
-    } else {
-      (parent as ChildrenMixin).appendChild(component);
-    }
+  // Insert component at the same position in parent (validated above)
+  const index = (parent as ChildrenMixin).children.indexOf(node);
+  if (index !== -1) {
+    (parent as ChildrenMixin).insertChild(index, component);
+  } else {
+    (parent as ChildrenMixin).appendChild(component);
   }
 
   // Remove the original node
@@ -134,7 +142,7 @@ export async function createComponent(
 
 export async function createComponentSet(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const componentIds = params.componentIds as string[] | undefined;
   const name = params.name as string | undefined;
 
@@ -201,7 +209,7 @@ export async function createComponentSet(
 
 export async function createInstance(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const componentId = params.componentId as string | undefined;
   const x = params.x as number | undefined;
   const y = params.y as number | undefined;
@@ -236,13 +244,16 @@ export async function createInstance(
   if (parentId) {
     const parentNode = figma.getNodeById(parentId);
     if (!parentNode) {
+      instance.remove();
       return errorResponse(
-        `Parent '${parentId}' not found. The instance was created but could not be moved to the specified parent.`
+        `Parent '${parentId}' not found. The instance has been removed. ` +
+          `Verify the parent node ID is correct and try again.`
       );
     }
     if ("appendChild" in parentNode) {
       (parentNode as BaseNode & ChildrenMixin).appendChild(instance);
     } else {
+      instance.remove();
       return errorResponse(
         `Parent '${parentId}' (${parentNode.name}) cannot contain children. ` +
           `Choose a frame, group, or page as the parent.`
@@ -268,7 +279,7 @@ export async function createInstance(
 
 export async function swapInstance(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const instanceId = params.instanceId as string | undefined;
   const newComponentId = params.newComponentId as string | undefined;
 
@@ -328,7 +339,7 @@ const SUPPORTED_OVERRIDE_PROPERTIES = ["text", "fill", "visible", "opacity"];
 
 export async function setInstanceOverride(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const instanceId = params.instanceId as string | undefined;
   const overrides = params.overrides as
     | Array<{
@@ -420,16 +431,15 @@ export async function setInstanceOverride(
             `Cannot set fill on node '${targetNode.id}' (${targetNode.name}) — it does not support fills.`
           );
         }
-        const color = parseHexColor(String(value));
-        if (!color) {
+        try {
+          const paint = hexToSolidPaint(String(value));
+          (targetNode as GeometryMixin).fills = [paint as Paint];
+          applied.push({ property, nodeId, status: "ok" });
+        } catch {
           return errorResponse(
-            `Invalid hex color '${value}'. Use format #RRGGBB or #RRGGBBAA.`
+            `Invalid hex color '${value}'. Use format #RRGGBB or #RRGGBBAA (e.g., #FF0000 or #FF000080).`
           );
         }
-        (targetNode as GeometryMixin).fills = [
-          { type: "SOLID", color, opacity: 1 },
-        ];
-        applied.push({ property, nodeId, status: "ok" });
         break;
       }
 
@@ -467,7 +477,7 @@ export async function setInstanceOverride(
 
 export async function detachInstance(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const instanceId = params.instanceId as string | undefined;
 
   if (!instanceId) {
@@ -500,24 +510,6 @@ export async function detachInstance(
     width: frame.width,
     height: frame.height,
   });
-}
-
-// ============================================================
-// Color Parsing Helper
-// ============================================================
-
-function parseHexColor(
-  hex: string
-): { r: number; g: number; b: number } | null {
-  const match = hex.match(/^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/);
-  if (!match) return null;
-
-  const h = match[1];
-  return {
-    r: parseInt(h.substring(0, 2), 16) / 255,
-    g: parseInt(h.substring(2, 4), 16) / 255,
-    b: parseInt(h.substring(4, 6), 16) / 255,
-  };
 }
 
 // ============================================================

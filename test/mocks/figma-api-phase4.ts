@@ -522,6 +522,12 @@ export function createMockFigma(): MockFigmaGlobal {
       page.parent = doc as unknown as MockBaseNode;
       doc.children.push(page);
       allNodes.set(page.id, page);
+      // Patch appendChild so nodes added to this page are auto-registered
+      const origAppend = page.appendChild.bind(page);
+      page.appendChild = (child: MockSceneNode) => {
+        origAppend(child);
+        registerNode(child as unknown as MockBaseNode);
+      };
       return page;
     }),
 

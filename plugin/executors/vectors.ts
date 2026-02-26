@@ -1,8 +1,7 @@
 // plugin/executors/vectors.ts
 import { registerExecutor } from "./registry.js";
 
-interface CommandResponse {
-  id?: string;
+interface CommandResult {
   success: boolean;
   data?: unknown;
   error?: string;
@@ -16,11 +15,11 @@ function getNode(nodeId: string): SceneNode | null {
   return figma.getNodeById(nodeId) as SceneNode | null;
 }
 
-function errorResponse(error: string): CommandResponse {
+function errorResponse(error: string): CommandResult {
   return { success: false, error };
 }
 
-function successResponse(data: unknown): CommandResponse {
+function successResponse(data: unknown): CommandResult {
   return { success: true, data };
 }
 
@@ -33,7 +32,7 @@ type BooleanOp = (typeof VALID_BOOLEAN_OPS)[number];
 
 export async function booleanOperation(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const nodeIds = params.nodeIds as string[] | undefined;
   const operation = params.operation as string | undefined;
 
@@ -75,11 +74,20 @@ export async function booleanOperation(
     nodes.push(node);
   }
 
-  // All nodes should share the same parent for boolean operations
+  // All nodes must share the same parent for boolean operations
   const parent = nodes[0].parent;
   if (!parent) {
     return errorResponse(
       `Node '${nodes[0].id}' has no parent. Nodes must be on a page or inside a frame.`
+    );
+  }
+
+  const mismatch = nodes.find((n) => n.parent?.id !== parent.id);
+  if (mismatch) {
+    return errorResponse(
+      `All nodes must share the same parent for a boolean operation. ` +
+        `Node '${mismatch.id}' (${mismatch.name}) is in a different container. ` +
+        `Move all nodes into the same frame or page before combining them.`
     );
   }
 
@@ -131,7 +139,7 @@ export async function booleanOperation(
 
 export async function flattenNode(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const nodeId = params.nodeId as string | undefined;
 
   if (!nodeId) {
@@ -164,7 +172,7 @@ export async function flattenNode(
 
 export async function setMask(
   params: Record<string, unknown>
-): Promise<CommandResponse> {
+): Promise<CommandResult> {
   const nodeId = params.nodeId as string | undefined;
   const isMask = params.isMask as boolean | undefined;
 
