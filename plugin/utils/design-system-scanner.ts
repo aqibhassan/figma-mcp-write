@@ -75,14 +75,16 @@ function scanVariables(): DesignSystemContext["variables"] {
           colorTokens.push(info);
           break;
         case "FLOAT": {
-          // Heuristic: if name contains spacing/gap/padding/margin, it's spacing
+          // Classify by name keywords — unclassified floats are skipped
           const lowerName = variable.name.toLowerCase();
           if (
             lowerName.includes("spacing") ||
             lowerName.includes("gap") ||
             lowerName.includes("padding") ||
             lowerName.includes("margin") ||
-            lowerName.includes("space")
+            lowerName.includes("space") ||
+            lowerName.includes("size") ||
+            lowerName.includes("radius")
           ) {
             spacingTokens.push(info);
           } else if (
@@ -92,10 +94,9 @@ function scanVariables(): DesignSystemContext["variables"] {
             lowerName.includes("text")
           ) {
             typographyTokens.push(info);
-          } else {
-            // Default: treat as spacing if it's a round number
-            spacingTokens.push(info);
           }
+          // Unclassified FLOAT variables (e.g., animation/duration, border-width)
+          // are intentionally omitted to avoid polluting spacing suggestions.
           break;
         }
         case "STRING":
@@ -190,12 +191,18 @@ function scanStyles(): DesignSystemContext["styles"] {
 // Component Scanning
 // ============================================================
 
+const MAX_SCAN_NODES = 5000;
+
 function scanComponents(): DesignSystemContext["components"] {
   const local: ComponentInfo[] = [];
 
   try {
-    // Walk the document to find all components
-    function walkForComponents(node: BaseNode): void {
+    let nodesVisited = 0;
+
+    // Walk the document to find all components (bounded by MAX_SCAN_NODES)
+    function walkForComponents(node: BaseNode): boolean {
+      if (nodesVisited++ >= MAX_SCAN_NODES) return false;
+
       if (node.type === "COMPONENT") {
         const comp = node as ComponentNode;
         local.push({
@@ -208,14 +215,15 @@ function scanComponents(): DesignSystemContext["components"] {
       if ("children" in node) {
         const parent = node as BaseNode & ChildrenMixin;
         for (const child of parent.children) {
-          walkForComponents(child);
+          if (!walkForComponents(child)) return false;
         }
       }
+      return true;
     }
 
-    // Scan all pages
+    // Scan all pages until limit is reached
     for (const page of figma.root.children) {
-      walkForComponents(page);
+      if (!walkForComponents(page)) break;
     }
   } catch {
     // Scanning failed — return empty

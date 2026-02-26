@@ -114,6 +114,7 @@ export interface MockVariableCollection {
   variableIds: string[];
   addMode: (name: string) => { modeId: string; name: string };
   removeMode: (modeId: string) => void;
+  renameMode: (modeId: string, name: string) => void;
 }
 
 // ============================================================
@@ -437,6 +438,10 @@ export function createMockVariableCollection(
     }),
     removeMode: vi.fn((modeId: string) => {
       collection.modes = collection.modes.filter((m) => m.modeId !== modeId);
+    }),
+    renameMode: vi.fn((modeId: string, name: string) => {
+      const mode = collection.modes.find((m) => m.modeId === modeId);
+      if (mode) mode.name = name;
     }),
   };
   return collection;

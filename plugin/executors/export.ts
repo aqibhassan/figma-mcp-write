@@ -158,6 +158,19 @@ export async function setExportSettings(
       );
     }
 
+    const VALID_CONSTRAINT_TYPES = ["SCALE", "WIDTH", "HEIGHT"] as const;
+    if (
+      setting.constraint &&
+      !VALID_CONSTRAINT_TYPES.includes(
+        setting.constraint.type as (typeof VALID_CONSTRAINT_TYPES)[number]
+      )
+    ) {
+      return errorResponse(
+        `Invalid constraint type '${setting.constraint.type}'. ` +
+          `Must be one of: ${VALID_CONSTRAINT_TYPES.join(", ")}`
+      );
+    }
+
     exportSettings.push({
       format: fmt as ExportFormat,
       suffix: setting.suffix ?? "",
@@ -228,8 +241,14 @@ export async function setImageFill(
   let imageData: Uint8Array;
 
   if (imageBase64) {
-    // Decode base64 to Uint8Array
-    imageData = base64ToUint8Array(imageBase64);
+    try {
+      imageData = base64ToUint8Array(imageBase64);
+    } catch {
+      return errorResponse(
+        "Invalid imageBase64: failed to decode base64 string. " +
+          "Ensure the value is a valid base64-encoded image (no data: prefix, no line breaks)."
+      );
+    }
   } else {
     // URL-based image loading would require network access from the plugin
     // For now, return an error asking to use base64 instead

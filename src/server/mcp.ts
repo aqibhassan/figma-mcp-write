@@ -44,10 +44,14 @@ export class FigmaMcpServer {
     });
 
     // Wire up: when WebSocket receives a response, resolve it in the queue
-    // Special case: design_system_scan responses update the DS context manager
+    // Special case: design_system_result (id="design_system_scan") is a push
+    // from the plugin, not a command response — intercept before queuing.
     this.wsManager.onResponse((response) => {
-      if (response.id === "design_system_scan" && response.success) {
-        this.dsManager?.setContext(response.data as DesignSystemContext);
+      if (response.id === "design_system_scan") {
+        if (response.success) {
+          this.dsManager?.setContext(response.data as DesignSystemContext);
+        }
+        // On failure the context remains unchanged; no further action needed.
         return;
       }
       this.queue.resolveWithResponse(response);

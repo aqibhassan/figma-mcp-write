@@ -49,10 +49,13 @@ export async function createVariableCollection(
 
   const collection = figma.variables.createVariableCollection(name.trim());
 
-  // If additional modes are requested, add them
-  // Note: Figma creates a default mode automatically
+  // If modes are requested, rename the auto-created first mode and add the rest
   if (modes && Array.isArray(modes) && modes.length > 0) {
-    // Add remaining modes (first mode already created by Figma)
+    // Figma creates a default mode automatically — rename it to the first requested name
+    if (collection.modes.length > 0) {
+      collection.renameMode(collection.modes[0].modeId, modes[0]);
+    }
+    // Add remaining modes
     for (let i = 1; i < modes.length; i++) {
       collection.addMode(modes[i]);
     }
@@ -123,7 +126,15 @@ export async function createVariable(
   // Set initial value if provided
   if (value !== undefined && collection.modes.length > 0) {
     const defaultModeId = collection.modes[0].modeId;
-    variable.setValueForMode(defaultModeId, value);
+    try {
+      variable.setValueForMode(defaultModeId, value);
+    } catch (err) {
+      return errorResponse(
+        `Variable '${name}' created but failed to set initial value: ` +
+          `${err instanceof Error ? err.message : String(err)}. ` +
+          `Ensure the value type matches resolvedType '${resolvedType}'.`
+      );
+    }
   }
 
   return successResponse({
