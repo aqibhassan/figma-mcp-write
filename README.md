@@ -6,11 +6,11 @@
 **Give AI full control over Figma. The first open-source read/write Figma MCP.**
 
 [![npm version](https://img.shields.io/npm/v/figma-mcp-write.svg)](https://www.npmjs.com/package/figma-mcp-write)
-[![license](https://img.shields.io/npm/l/figma-mcp-write.svg)](https://github.com/anthropics/figma-mcp-write/blob/main/LICENSE)
-[![build](https://img.shields.io/github/actions/workflow/status/anthropics/figma-mcp-write/ci.yml?branch=main)](https://github.com/anthropics/figma-mcp-write/actions)
-[![GitHub stars](https://img.shields.io/github/stars/anthropics/figma-mcp-write.svg)](https://github.com/anthropics/figma-mcp-write/stargazers)
+[![license](https://img.shields.io/npm/l/figma-mcp-write.svg)](https://github.com/aqibhassan/figma-mcp-write/blob/main/LICENSE)
+[![build](https://img.shields.io/github/actions/workflow/status/aqibhassan/figma-mcp-write/ci.yml?branch=main)](https://github.com/aqibhassan/figma-mcp-write/actions)
+[![GitHub stars](https://img.shields.io/github/stars/aqibhassan/figma-mcp-write.svg)](https://github.com/aqibhassan/figma-mcp-write/stargazers)
 
-68 tools (50 core + 18 AI-only superpowers) exposed through a smart router of just 13 MCP tools.
+70 tools (52 core + 18 AI-only superpowers) exposed through a smart router of just 13 MCP tools.
 Design system intelligence. Compound operations. No API token required.
 
 <!-- TODO: Replace with actual demo GIF after recording -->
@@ -24,24 +24,35 @@ Design system intelligence. Compound operations. No API token required.
 
 ## Quick Start
 
-### 1. Install the MCP server
+### 1. Clone and build
 
 ```bash
-# Add to Claude Code (recommended)
-claude mcp add figma -- npx figma-mcp-write
-
-# Or install globally
-npm install -g figma-mcp-write
+git clone https://github.com/aqibhassan/figma-mcp-write.git
+cd figma-mcp-write
+npm install
+npm run build
 ```
 
-### 2. Install the Figma plugin
+### 2. Add to Claude Code
+
+```bash
+claude mcp add figma -- node /absolute/path/to/figma-mcp-write/dist/src/server/index.js
+```
+
+Replace `/absolute/path/to/figma-mcp-write` with your actual clone path. Verify it works:
+
+```bash
+claude mcp list   # should show "figma" in the list
+```
+
+### 3. Install the Figma plugin
 
 1. Open Figma (desktop or browser)
 2. Go to **Plugins > Development > Import plugin from manifest...**
-3. Select `node_modules/figma-mcp-write/plugin/manifest.json`
-4. Run the plugin from the Plugins menu
+3. Select the `plugin/manifest.json` file from your cloned repo
+4. Run the plugin — it shows a status panel when the MCP server connects
 
-### 3. Start designing with AI
+### 4. Start designing with AI
 
 Open Claude Code and start talking to your Figma file:
 
@@ -82,7 +93,7 @@ Single Node.js process. No API tokens. No external services. The plugin runs ins
 
 ### Why 13 MCP tools instead of 68?
 
-Most Figma MCPs expose every operation as a separate tool. With 56+ tools, Claude spends 2-30x more tokens just reading tool definitions. Our **smart router** groups 68 operations into 13 category tools. Claude picks the category, then specifies the command. Same power, fraction of the token cost.
+Most Figma MCPs expose every operation as a separate tool. With 56+ tools, Claude spends 2-30x more tokens just reading tool definitions. Our **smart router** groups 70 operations into 13 category tools. Claude picks the category, then specifies the command. Same power, fraction of the token cost.
 
 ---
 
@@ -139,7 +150,7 @@ These are capabilities no designer has natively. Our primary differentiator.
 |---------|:-:|:-:|:-:|:-:|:-:|
 | Read access | Yes | Yes | Yes | Yes | Yes |
 | Write access | Full | No | Partial | Partial | No |
-| Tool count | 68 | 2 | ~30 | ~56 | 4-5 |
+| Tool count | 70 | 2 | ~30 | ~56 | 4-5 |
 | MCP tool overhead | 13 tools | 2 tools | ~30 tools | ~56 tools | 4-5 tools |
 | Compound operations | Yes | No | No | No | No |
 | Design system aware | Yes | No | No | Partial | Partial |
@@ -169,7 +180,7 @@ Every tool is design-system-aware. Use a color that does not match a token? The 
 ## Development
 
 ```bash
-git clone https://github.com/anthropics/figma-mcp-write.git
+git clone https://github.com/aqibhassan/figma-mcp-write.git
 cd figma-mcp-write
 npm install
 
@@ -190,6 +201,29 @@ npm run lint
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contributor guide.
+
+---
+
+## Troubleshooting
+
+**Plugin won't connect to server**
+- Verify the MCP server is running (Claude Code should start it automatically when you use a `figma_*` tool)
+- Check the port is free: `lsof -i :3846`
+- In Figma desktop: Plugins > Development > Open Console to see plugin errors
+- Try closing and re-running the plugin
+
+**"No Figma plugin connected" error in Claude**
+- The plugin must be running in Figma before you call a tool
+- The plugin shows a green "Connected" badge when the MCP server is reachable
+
+**Command times out**
+- Default timeout is 30s; bulk/superpowers ops get 120s
+- Check the Figma plugin console for errors
+- For very large files (10K+ nodes), bulk operations may need a timeout increase
+
+**TypeScript errors after pulling**
+- Run `npm install` then `npm run build`
+- Requires Node.js >= 18
 
 ---
 

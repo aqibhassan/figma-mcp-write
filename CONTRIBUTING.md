@@ -6,7 +6,7 @@ Thanks for your interest in contributing. This guide covers the new router archi
 ## Setup
 
 ```bash
-git clone https://github.com/anthropics/figma-mcp-write.git
+git clone https://github.com/aqibhassan/figma-mcp-write.git
 cd figma-mcp-write
 npm install
 ```

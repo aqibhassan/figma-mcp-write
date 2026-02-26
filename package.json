@@ -6,11 +6,11 @@
   "author": "Hassan",
   "repository": {
     "type": "git",
-    "url": "https://github.com/anthropics/figma-mcp-write.git"
+    "url": "https://github.com/aqibhassan/figma-mcp-write.git"
   },
-  "homepage": "https://github.com/anthropics/figma-mcp-write#readme",
+  "homepage": "https://github.com/aqibhassan/figma-mcp-write#readme",
   "bugs": {
-    "url": "https://github.com/anthropics/figma-mcp-write/issues"
+    "url": "https://github.com/aqibhassan/figma-mcp-write/issues"
   },
   "keywords": [
     "figma",
