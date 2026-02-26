@@ -102,6 +102,7 @@ export interface MockSectionNode extends MockSceneNode {
   children: MockSceneNode[];
   appendChild: (child: MockSceneNode) => void;
   insertChild: (index: number, child: MockSceneNode) => void;
+  resizeWithoutConstraints: (w: number, h: number) => void;
 }
 
 export interface MockPageNode extends MockBaseNode {
@@ -415,6 +416,10 @@ export function createMockSection(name = "Section"): MockSectionNode {
     isMask: false,
     fills: [],
     children: [] as MockSceneNode[],
+    resizeWithoutConstraints(w: number, h: number) {
+      this.width = w;
+      this.height = h;
+    },
   } as MockSectionNode;
   createChildrenMixin(node as unknown as MockSceneNode);
   return node;
