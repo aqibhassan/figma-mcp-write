@@ -211,10 +211,22 @@ export function createMockComponent(name = "Component"): MockComponentNode {
     opacity: 1,
     isMask: false,
     fills: [],
+    strokes: [],
+    cornerRadius: 0,
+    clipsContent: false,
+    layoutMode: "NONE" as const,
+    itemSpacing: 0,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    primaryAxisAlignItems: "MIN" as const,
+    counterAxisAlignItems: "MIN" as const,
     children: [] as MockSceneNode[],
     description: "",
     key: `component-key-${base.id}`,
     createInstance: vi.fn(),
+    resize(w: number, h: number) { this.width = w; this.height = h; },
   } as unknown as MockComponentNode;
   createChildrenMixin(node);
 
