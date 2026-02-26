@@ -278,7 +278,13 @@ export function nodeMatchesSelector(
   }
 
   if (selector.name) {
-    const pattern = new RegExp(selector.name, "i");
+    let pattern: RegExp;
+    try {
+      pattern = new RegExp(selector.name, "i");
+    } catch {
+      // Invalid regex — fall back to literal substring match
+      pattern = new RegExp(selector.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+    }
     if (!pattern.test(node.name)) {
       return false;
     }

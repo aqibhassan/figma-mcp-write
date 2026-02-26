@@ -153,6 +153,9 @@ export async function bulkStyle(
       switch (key) {
         case "fill": {
           const hex = value as string;
+          if (!/^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/.test(hex)) {
+            break; // skip invalid hex — don't crash or corrupt the node
+          }
           const rgb = hexToRgb(hex);
           (node as unknown as { fills: Paint[] }).fills = [
             {
@@ -167,6 +170,9 @@ export async function bulkStyle(
 
         case "stroke": {
           const hex = value as string;
+          if (!/^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/.test(hex)) {
+            break; // skip invalid hex — don't crash or corrupt the node
+          }
           const rgb = hexToRgb(hex);
           (node as unknown as { strokes: Paint[] }).strokes = [
             {
@@ -614,8 +620,32 @@ export async function designLint(
           (node as unknown as { fillStyleId: string }).fillStyleId !== "";
 
         if (hasFills && !hasFillStyleId && node.type !== "TEXT") {
-          // Only flag if there are many nodes — we check this in a post-pass
-          // For now, collect raw fill data
+          issues.push({
+            rule: "detached-styles",
+            severity: "warning",
+            message: `"${node.name}" has a solid fill not linked to a color style. Consider using a shared color style for consistency.`,
+            nodeId: node.id,
+            nodeName: node.name,
+            suggestion: `Open the fill panel and click the four-dot style icon to attach a color style. Create one first with figma_styling apply_style if needed.`,
+          });
+        }
+      }
+    }
+
+    // Rule: orphan-components (instances with no matching component in this file)
+    if (activeRules.includes("orphan-components")) {
+      if (node.type === "INSTANCE") {
+        const instance = node as InstanceNode;
+        const mainComponent = instance.mainComponent;
+        if (!mainComponent) {
+          issues.push({
+            rule: "orphan-components",
+            severity: "error",
+            message: `Instance "${node.name}" has a missing or broken component link (orphaned instance). The master component may have been deleted or moved to an external library.`,
+            nodeId: node.id,
+            nodeName: node.name,
+            suggestion: `Either restore the main component, swap to an existing component via figma_components swap_instance, or detach the instance with detach_instance.`,
+          });
         }
       }
     }
@@ -662,14 +692,23 @@ export async function accessibilityCheck(
   const contrastLargeText = level === "AAA" ? 4.5 : 3;
   const minTouchTarget = level === "AAA" ? 48 : 44;
   const minFontSize = level === "AAA" ? 14 : 12;
-  const largeTextSize = 18; // 18px or 14px bold
-
   for (const node of nodes) {
     // Contrast check for text nodes
     if (node.type === "TEXT") {
       const textNode = node as TextNode;
       const fontSize = typeof textNode.fontSize === "number" ? textNode.fontSize : 16;
-      const isLargeText = fontSize >= largeTextSize;
+      const fontStyle =
+        typeof (textNode as unknown as { fontName?: { style?: string } }).fontName?.style ===
+        "string"
+          ? ((textNode as unknown as { fontName: { style: string } }).fontName.style.toLowerCase())
+          : "";
+      const isBold =
+        fontStyle.includes("bold") ||
+        fontStyle.includes("black") ||
+        fontStyle.includes("heavy") ||
+        fontStyle.includes("extrabold");
+      // WCAG: large text = 18px regular OR 14px bold
+      const isLargeText = fontSize >= 18 || (fontSize >= 14 && isBold);
       const requiredRatio = isLargeText ? contrastLargeText : contrastNormalText;
 
       // Get text color
@@ -1751,13 +1790,13 @@ function parseJsonTokens(
         // Check if it's a nested group
         walk(value as Record<string, unknown>, name);
       } else if (typeof value === "string" && value.startsWith("#")) {
-        entries.push({ name: key, value, type: "COLOR" });
+        entries.push({ name, value, type: "COLOR" });
       } else if (typeof value === "number") {
-        entries.push({ name: key, value, type: "FLOAT" });
+        entries.push({ name, value, type: "FLOAT" });
       } else if (typeof value === "boolean") {
-        entries.push({ name: key, value, type: "BOOLEAN" });
+        entries.push({ name, value, type: "BOOLEAN" });
       } else if (typeof value === "string") {
-        entries.push({ name: key, value, type: "STRING" });
+        entries.push({ name, value, type: "STRING" });
       }
     }
   }
