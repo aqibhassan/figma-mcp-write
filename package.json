@@ -48,7 +48,7 @@
     "start": "node dist/src/server/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "vitest run test/e2e/",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "lint": "eslint src/ plugin/ shared/",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.plugin.json --noEmit",
     "create-tool": "tsx scripts/create-tool.ts",
