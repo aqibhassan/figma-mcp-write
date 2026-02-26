@@ -17,3 +17,4 @@ import "./pages.js";
 import "./vectors.js";
 import "./export.js";
 import "./variables.js";
+import "./superpowers.js";
