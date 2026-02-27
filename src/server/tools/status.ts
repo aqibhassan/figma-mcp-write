@@ -1,6 +1,7 @@
 // src/server/tools/status.ts
 import { WebSocketManager } from "../websocket.js";
 import { Router } from "../router.js";
+import { RestReadAdapter } from "../rest-adapter.js";
 
 export interface ToolDef {
   name: string;
@@ -15,22 +16,42 @@ export interface ToolDef {
 
 export function createStatusTool(
   wsManager: WebSocketManager,
-  router: Router
+  router: Router,
+  restAdapter?: RestReadAdapter
 ): ToolDef {
   return {
     name: "figma_status",
     description:
-      "Check the connection status of the Figma plugin. Returns whether the plugin is connected, the current file name and ID, page list, and available commands. Call this first to verify the plugin is running before using other Figma tools.",
+      "Check the connection status. Returns mode (plugin/rest-api/disconnected), file info, and available commands. " +
+      "Pass 'fileUrl' to set the target Figma file for REST API reads (e.g. 'https://www.figma.com/design/abc123/MyFile').",
     inputSchema: {
       type: "object",
-      properties: {},
+      properties: {
+        fileUrl: {
+          type: "string",
+          description: "Optional Figma file URL to set as the active file for REST API reads.",
+        },
+      },
     },
-    handler: async () => {
+    handler: async (params) => {
       const connected = wsManager.isConnected;
       const fileInfo = wsManager.fileInfo;
+      const hasRestApi = !!restAdapter;
+
+      // Handle fileUrl parameter — set the REST API target file
+      const fileUrl = params.fileUrl as string | undefined;
+      if (fileUrl && restAdapter) {
+        const ok = restAdapter.setFileUrl(fileUrl);
+        if (!ok) {
+          return { error: `Invalid Figma URL: ${fileUrl}` };
+        }
+      }
+
+      const mode = connected ? "plugin" : hasRestApi ? "rest-api" : "disconnected";
 
       return {
         connected,
+        mode,
         file: connected
           ? {
               name: fileInfo?.name,
@@ -38,7 +59,10 @@ export function createStatusTool(
               pages: fileInfo?.pages,
               nodeCount: fileInfo?.nodeCount,
             }
-          : null,
+          : restAdapter?.getFileKey()
+            ? { key: restAdapter.getFileKey() }
+            : null,
+        restApiEnabled: hasRestApi,
         availableCategories: [
           "layers",
           "text",
@@ -54,8 +78,10 @@ export function createStatusTool(
         ],
         toolCount: 70,
         message: connected
-          ? `Connected to "${fileInfo?.name}" with ${fileInfo?.nodeCount} nodes`
-          : "No Figma plugin connected. Open Figma and run the figma-mcp-write plugin.",
+          ? `Plugin connected to "${fileInfo?.name}" (full read/write access)`
+          : hasRestApi
+            ? `REST API mode — reads available${restAdapter?.getFileKey() ? ` for file ${restAdapter.getFileKey()}` : ". Set a file URL to begin."}`
+            : "No connection. Run 'npx figma-mcp-write setup' to configure.",
       };
     },
   };

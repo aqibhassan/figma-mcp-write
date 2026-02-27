@@ -9,6 +9,7 @@ import { WebSocketManager } from "./websocket.js";
 import { CommandQueue } from "./command-queue.js";
 import { Router } from "./router.js";
 import { DesignSystemManager } from "./design-system.js";
+import { RestReadAdapter } from "./rest-adapter.js";
 import { createStatusTool, ToolDef } from "./tools/status.js";
 import { SERVER_VERSION, DesignSystemContext } from "../../shared/protocol.js";
 
@@ -18,13 +19,18 @@ export class FigmaMcpServer {
   private queue: CommandQueue;
   private router: Router;
   private dsManager: DesignSystemManager | null;
+  private restAdapter: RestReadAdapter | null;
   private tools: ToolDef[] = [];
 
-  constructor(wsManager: WebSocketManager, dsManager?: DesignSystemManager) {
+  constructor(wsManager: WebSocketManager, dsManager?: DesignSystemManager, restAdapter?: RestReadAdapter) {
     this.wsManager = wsManager;
     this.dsManager = dsManager ?? null;
+    this.restAdapter = restAdapter ?? null;
     this.queue = new CommandQueue();
-    this.router = new Router(this.queue);
+    this.router = new Router(this.queue, {
+      restAdapter,
+      isPluginConnected: () => wsManager.isConnected,
+    });
 
     this.server = new Server(
       { name: "figma-mcp-write", version: SERVER_VERSION },
@@ -72,7 +78,7 @@ export class FigmaMcpServer {
 
   private buildToolList(): void {
     // Status tool
-    this.tools.push(createStatusTool(this.wsManager, this.router));
+    this.tools.push(createStatusTool(this.wsManager, this.router, this.restAdapter ?? undefined));
 
     // Meta-tool
     this.tools.push(this.buildMetaTool());
@@ -186,6 +192,12 @@ export class FigmaMcpServer {
           params?: Record<string, unknown>;
           commands?: { command: string; params: Record<string, unknown> }[];
         };
+
+        // If params contains fileUrl, set it on the REST adapter
+        if (params?.fileUrl && this.restAdapter) {
+          this.restAdapter.setFileUrl(params.fileUrl as string);
+          delete params.fileUrl;
+        }
 
         if (command && params) {
           return await this.router.routeStructuredCommand(command, params);
@@ -308,6 +320,11 @@ export class FigmaMcpServer {
           command: string;
           params: Record<string, unknown>;
         };
+        // If params contains fileUrl, set it on the REST adapter
+        if (params.fileUrl && this.restAdapter) {
+          this.restAdapter.setFileUrl(params.fileUrl as string);
+          delete params.fileUrl;
+        }
         return await this.router.routeCategoryCommand(cat.name, command, params);
       },
     }));
