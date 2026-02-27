@@ -24,44 +24,70 @@ Design system intelligence. Compound operations. No API token required.
 
 ## Quick Start
 
-### 1. Clone and build
+### Option A: One-command setup (recommended)
+
+```bash
+npx figma-mcp-write setup
+```
+
+This will:
+1. Open your browser to create a Figma API token
+2. Verify and save the token locally
+3. Configure Claude Code automatically
+
+Reads work immediately. For write access, install the [Figma plugin](#install-the-figma-plugin).
+
+### Option B: Environment variable
+
+```bash
+# Set your Figma token
+export FIGMA_API_TOKEN=figd_your_token_here
+
+# Add to Claude Code
+claude mcp add figma -- npx figma-mcp-write
+```
+
+### Option C: Clone and build (development)
 
 ```bash
 git clone https://github.com/aqibhassan/figma-mcp-write.git
 cd figma-mcp-write
-npm install
-npm run build
-```
-
-### 2. Add to Claude Code
-
-```bash
+npm install && npm run build
 claude mcp add figma -- node /absolute/path/to/figma-mcp-write/dist/src/server/index.js
 ```
 
-Replace `/absolute/path/to/figma-mcp-write` with your actual clone path. Verify it works:
+### Install the Figma plugin
 
-```bash
-claude mcp list   # should show "figma" in the list
-```
-
-### 3. Install the Figma plugin
+For write access (creating/modifying designs), install the Figma plugin:
 
 1. Open Figma (desktop or browser)
 2. Go to **Plugins > Development > Import plugin from manifest...**
 3. Select the `plugin/manifest.json` file from your cloned repo
 4. Run the plugin — it shows a status panel when the MCP server connects
 
-### 4. Start designing with AI
+> Without the plugin, all read operations (inspecting files, exporting, searching) work via the REST API. The plugin is only needed for creating and modifying designs.
 
-Open Claude Code and start talking to your Figma file:
+### Start designing with AI
 
 ```
-> Create a card component with a hero image, title, subtitle, and CTA button.
-  Use 16px spacing and rounded corners.
+> Show me all frames in figma.com/design/abc123/MyFile
+  → Works immediately via REST API (no plugin needed)
+
+> Create a card component with a hero image, title, subtitle, and CTA button
+  → Requires plugin running in Figma
 ```
 
-Claude will use the MCP tools to create, style, and lay out the design directly in your Figma file.
+---
+
+## Connection Modes
+
+| Mode | Setup | Reads | Writes |
+|------|-------|-------|--------|
+| **REST API** | Token only (no plugin needed) | Via Figma API | Not available |
+| **Plugin** | Plugin running in Figma | Real-time | Full access |
+| **Hybrid** | Token + Plugin running | Plugin preferred | Full access |
+
+The server automatically uses the best available mode. When the plugin is connected, all operations go through it (faster, real-time). When disconnected, reads fall back to the REST API.
 
 ---
 
@@ -74,22 +100,14 @@ Claude Code (stdio)
 MCP Server (13 tools: 1 meta + 11 category + 1 status)
     |
     v
-Smart Router (pattern matching + compound operations)
+Smart Router (pattern matching + REST API fallback)
     |
-    v
-Executor Layer (68 executors)
+    ├── Plugin connected → WebSocket → Figma Plugin → Plugin API (full R/W)
     |
-    v
-WebSocket (ws://localhost:3846)
-    |
-    v
-Figma Plugin (desktop + browser)
-    |
-    v
-Figma Plugin API (full read/write access)
+    └── Plugin disconnected → Figma REST API (reads only, via PAT token)
 ```
 
-Single Node.js process. No API tokens. No external services. The plugin runs inside your Figma session, so it has full access to the Figma Plugin API.
+Single Node.js process. No external services. The plugin runs inside your Figma session for full read/write access. Without the plugin, reads work via the Figma REST API with a personal access token.
 
 ### Why 13 MCP tools instead of 68?
 
@@ -159,7 +177,7 @@ These are capabilities no designer has natively. Our primary differentiator.
 | Localization | Yes | No | No | No | No |
 | Bulk operations | Yes | No | Partial | Partial | No |
 | Token export/import | Yes | No | No | Partial | No |
-| No API token needed | Yes | No | Yes | Mixed | No |
+| No API token needed | Optional | No | Yes | Mixed | No |
 | Open source | MIT | MIT | MIT | MIT | No |
 
 ---

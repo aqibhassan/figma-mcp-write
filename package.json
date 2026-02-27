@@ -1,6 +1,6 @@
 {
   "name": "figma-mcp-write",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Full read/write Figma MCP server for Claude Code. 68 tools through 13 MCP endpoints. Design system intelligence, compound operations, AI-only superpowers. No API token required.",
   "license": "MIT",
   "author": "Hassan",
