@@ -54,16 +54,22 @@ function serializeNode(
   // Text properties
   if (node.type === "TEXT") {
     if ("characters" in node) result.characters = node.characters;
-    if ("fontSize" in node) result.fontSize = node.fontSize;
-    if ("fontName" in node) result.fontName = node.fontName;
+    if ("fontSize" in node) result.fontSize = typeof node.fontSize === "symbol" ? "mixed" : node.fontSize;
+    if ("fontName" in node) result.fontName = typeof node.fontName === "symbol" ? "mixed" : node.fontName;
     if ("textAlignHorizontal" in node)
-      result.textAlignHorizontal = node.textAlignHorizontal;
+      result.textAlignHorizontal = typeof node.textAlignHorizontal === "symbol" ? "mixed" : node.textAlignHorizontal;
     if ("textAlignVertical" in node)
-      result.textAlignVertical = node.textAlignVertical;
+      result.textAlignVertical = typeof node.textAlignVertical === "symbol" ? "mixed" : node.textAlignVertical;
   }
 
-  // Fills
-  if ("fills" in node) result.fills = node.fills;
+  // Fills — clone to strip non-serializable Symbol properties
+  if ("fills" in node) {
+    try {
+      result.fills = JSON.parse(JSON.stringify(node.fills));
+    } catch {
+      result.fills = [];
+    }
+  }
 
   // Children
   if (depth > 0 && "children" in node) {
