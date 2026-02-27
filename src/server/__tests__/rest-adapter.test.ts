@@ -92,6 +92,31 @@ describe("RestReadAdapter", () => {
       expect((result.data as { url: string }).url).toBe("https://cdn.figma.com/img.png");
     });
 
+    it("should handle get_node_css", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          nodes: {
+            "1:2": {
+              document: {
+                id: "1:2", name: "Frame", type: "FRAME",
+                absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+                opacity: 0.8,
+                cornerRadius: 8,
+              },
+            },
+          },
+        }),
+      });
+      adapter.setFileKey("abc123");
+      const result = await adapter.executeRead("get_node_css", { nodeId: "1:2" });
+      expect(result.success).toBe(true);
+      const data = result.data as { css: string };
+      expect(data.css).toContain("width: 200px");
+      expect(data.css).toContain("opacity: 0.8");
+      expect(data.css).toContain("border-radius: 8px");
+    });
+
     it("should return error if no file key set", async () => {
       const result = await adapter.executeRead("get_page_nodes", {});
       expect(result.success).toBe(false);

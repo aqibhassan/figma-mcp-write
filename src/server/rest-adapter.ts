@@ -20,7 +20,8 @@ const PLUGIN_ONLY_READS = new Set([
 
 export class RestReadAdapter {
   private fileKey: string | null = null;
-  private cachedFile: { key: string; document: FigmaNode; name: string } | null = null;
+  private cachedFile: { key: string; document: FigmaNode; name: string; timestamp: number } | null = null;
+  private static readonly CACHE_TTL_MS = 30_000;
 
   constructor(private client: FigmaApiClient) {}
 
@@ -82,12 +83,14 @@ export class RestReadAdapter {
   }
 
   private async ensureFile(): Promise<{ document: FigmaNode; name: string }> {
-    if (this.cachedFile && this.cachedFile.key === this.fileKey) {
+    const now = Date.now();
+    if (this.cachedFile && this.cachedFile.key === this.fileKey
+        && (now - this.cachedFile.timestamp) < RestReadAdapter.CACHE_TTL_MS) {
       return this.cachedFile;
     }
     const file = await this.client.getFile(this.fileKey!);
     if (!file) throw new Error(`Could not fetch file '${this.fileKey}'. Check the file key and token permissions.`);
-    this.cachedFile = { key: this.fileKey!, document: file.document, name: file.name };
+    this.cachedFile = { key: this.fileKey!, document: file.document, name: file.name, timestamp: now };
     return this.cachedFile;
   }
 

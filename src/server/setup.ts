@@ -1,7 +1,7 @@
 // src/server/setup.ts
 import { createInterface } from "readline/promises";
 import { stdin, stdout } from "process";
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 import { FigmaApiClient } from "./figma-api.js";
 import { saveConfig } from "./config.js";
 import { SERVER_VERSION } from "../../shared/protocol.js";
@@ -23,7 +23,7 @@ export async function runSetup(): Promise<void> {
   try {
     const platform = process.platform;
     const cmd = platform === "darwin" ? "open" : platform === "win32" ? "start" : "xdg-open";
-    execSync(`${cmd} "https://www.figma.com/settings"`, { stdio: "ignore" });
+    spawnSync(cmd, ["https://www.figma.com/settings"], { stdio: "ignore" });
     console.log("  (Opened Figma settings in your browser)");
     console.log();
   } catch {
@@ -61,7 +61,7 @@ export async function runSetup(): Promise<void> {
   console.log("  " + "─".repeat(40));
 
   try {
-    execSync("claude mcp add figma -- npx figma-mcp-write", { stdio: "ignore" });
+    spawnSync("claude", ["mcp", "add", "figma", "--", "npx", "figma-mcp-write"], { stdio: "ignore" });
     console.log('  Added "figma" MCP server to Claude Code');
   } catch {
     console.log('  Could not auto-configure Claude Code.');

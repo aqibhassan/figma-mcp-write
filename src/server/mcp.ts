@@ -194,13 +194,15 @@ export class FigmaMcpServer {
         };
 
         // If params contains fileUrl, set it on the REST adapter
+        let commandParams = params;
         if (params?.fileUrl && this.restAdapter) {
           this.restAdapter.setFileUrl(params.fileUrl as string);
-          delete params.fileUrl;
+          const { fileUrl: _, ...rest } = params;
+          commandParams = rest;
         }
 
-        if (command && params) {
-          return await this.router.routeStructuredCommand(command, params);
+        if (command && commandParams) {
+          return await this.router.routeStructuredCommand(command, commandParams);
         }
 
         if (commands && commands.length > 0) {
@@ -321,11 +323,13 @@ export class FigmaMcpServer {
           params: Record<string, unknown>;
         };
         // If params contains fileUrl, set it on the REST adapter
+        let commandParams = params;
         if (params.fileUrl && this.restAdapter) {
           this.restAdapter.setFileUrl(params.fileUrl as string);
-          delete params.fileUrl;
+          const { fileUrl: _, ...rest } = params;
+          commandParams = rest;
         }
-        return await this.router.routeCategoryCommand(cat.name, command, params);
+        return await this.router.routeCategoryCommand(cat.name, command, commandParams);
       },
     }));
   }

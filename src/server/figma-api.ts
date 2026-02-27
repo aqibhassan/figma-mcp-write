@@ -79,7 +79,7 @@ export class FigmaApiClient {
   }
 
   static extractFileKey(urlOrKey: string): string | null {
-    const match = urlOrKey.match(/figma\.com\/(?:design|file)\/([a-zA-Z0-9]+)/);
+    const match = urlOrKey.match(/figma\.com\/(?:design|file|proto|board)\/([a-zA-Z0-9]+)/);
     if (match) return match[1];
     if (/^[a-zA-Z0-9]+$/.test(urlOrKey)) return urlOrKey;
     return null;

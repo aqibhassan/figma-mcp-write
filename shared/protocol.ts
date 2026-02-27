@@ -156,7 +156,7 @@ export const RECONNECT_INTERVAL = 2_000;
 export const DISCONNECT_BUFFER = 5_000;
 export const MAX_BATCH_SIZE = 100;
 export const MAX_BULK_NODES = 1000;
-export const SERVER_VERSION = "0.2.0";
+export const SERVER_VERSION = "0.3.0";
 
 // ============================================================
 // Helpers
