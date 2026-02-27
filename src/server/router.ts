@@ -7,7 +7,13 @@ import {
   BULK_TIMEOUT,
 } from "../../shared/protocol.js";
 import { CommandQueue } from "./command-queue.js";
+import { RestReadAdapter } from "./rest-adapter.js";
 import { randomUUID } from "crypto";
+
+export interface RouterOptions {
+  restAdapter?: RestReadAdapter;
+  isPluginConnected?: () => boolean;
+}
 
 // ============================================================
 // Command → Category mapping
@@ -138,7 +144,13 @@ export interface RouterResult {
 }
 
 export class Router {
-  constructor(private queue: CommandQueue) {}
+  private restAdapter: RestReadAdapter | null;
+  private isPluginConnected: () => boolean;
+
+  constructor(private queue: CommandQueue, options?: RouterOptions) {
+    this.restAdapter = options?.restAdapter ?? null;
+    this.isPluginConnected = options?.isPluginConnected ?? (() => true);
+  }
 
   getCategory(command: string): string | undefined {
     return COMMAND_CATEGORIES[command];
@@ -169,8 +181,31 @@ export class Router {
       );
     }
 
-    const timeout = this.getTimeout(command);
-    return this.queue.enqueue(command, params, timeout);
+    // If plugin is connected, always use it (fastest, full capability)
+    if (this.isPluginConnected()) {
+      const timeout = this.getTimeout(command);
+      return this.queue.enqueue(command, params, timeout);
+    }
+
+    // Plugin not connected — try REST API for reads
+    if (this.restAdapter && RestReadAdapter.canHandle(command)) {
+      return this.restAdapter.executeRead(command, params);
+    }
+
+    // Plugin-only read commands
+    if (RestReadAdapter.isPluginOnly(command)) {
+      return createErrorResponse(randomUUID(),
+        `'${command}' requires the Figma plugin to be running (needs live session access). ` +
+        `Open Figma and run the figma-mcp-write plugin.`
+      );
+    }
+
+    // Write command without plugin
+    return createErrorResponse(randomUUID(),
+      `'${command}' is a write operation that requires the Figma plugin. ` +
+      `Install it from the Figma Community and run it in your Figma file. ` +
+      `Read operations are available via REST API.`
+    );
   }
 
   async routeCategoryCommand(
